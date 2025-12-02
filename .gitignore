@@ -1,0 +1,24 @@
+# venv
+venv/
+.env/
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# notebooks
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+.vscode/
+*.swp
+
+# CSV
+*.csv
+
+# SyInterferoPy module
+SyInterferoPy/
+
