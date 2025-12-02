@@ -4,9 +4,10 @@ from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.tree import plot_tree
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import r2_score, root_mean_squared_error, mean_absolute_error
 
-
-def run_random_forest_experiment(
+def run_random_forest_classification(
     X,
     y,
     experiment_name="",
@@ -103,6 +104,104 @@ def run_random_forest_experiment(
         "y_pred": y_pred,
         "feature_importances": importances,
         "classes": classes,
+        "feature_names": feature_names,
+    }
+    return rf, results
+
+
+
+
+from sklearn.tree import plot_tree
+
+def run_random_forest_regression(
+    X,
+    y,
+    target_name="",
+    experiment_name="",
+    test_size=0.3,
+    random_state=42,
+    n_estimators=200,
+    max_depth=None,
+    plot_scatter=True,
+    plot_example_tree=False,
+    tree_max_depth=3,
+):
+    """
+    Train + evaluate a RandomForestRegressor on given X, y.
+
+    Prints metrics (R2, RMSE, MAE) and optionally:
+      - plots true vs predicted values (scatter)
+      - plots one example tree from the forest
+
+    Returns:
+        rf: fitted RandomForestRegressor
+        results: dict with y_test, y_pred, metrics, feature_importances, feature_names
+    """
+
+    # 1. Train/test split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+
+    # 2. Random Forest regressor
+    rf = RandomForestRegressor(
+        n_estimators=n_estimators,
+        max_depth=max_depth,
+        random_state=random_state,
+    )
+    rf.fit(X_train, y_train)
+
+    # 3. Predictions & metrics
+    y_pred = rf.predict(X_test)
+
+    r2 = r2_score(y_test, y_pred)
+    rmse = root_mean_squared_error(y_test, y_pred)
+    mae = mean_absolute_error(y_test, y_pred)
+
+    print(f"\n=== {experiment_name or 'RF regression'} | target = {target_name} ===")
+    print(f"R²   : {r2:.3f}")
+    print(f"RMSE : {rmse:.3f}")
+    print(f"MAE  : {mae:.3f}")
+
+    # 4. Scatter plot true vs predicted
+    if plot_scatter:
+        plt.figure()
+        plt.scatter(y_test, y_pred, alpha=0.5)
+        min_v = min(y_test.min(), y_pred.min())
+        max_v = max(y_test.max(), y_pred.max())
+        plt.plot([min_v, max_v], [min_v, max_v], "--")
+        plt.xlabel("True value")
+        plt.ylabel("Predicted value")
+        plt.title(f"{experiment_name or 'RF regression'} – {target_name}")
+        plt.tight_layout()
+        plt.show()
+
+    feature_names = np.array(X.columns)
+    importances = rf.feature_importances_
+
+    # 5. Optional: plot one tree from the forest
+    if plot_example_tree:
+        estimator = rf.estimators_[0]
+        fig, ax = plt.subplots(figsize=(14, 8))
+        plot_tree(
+            estimator,
+            feature_names=feature_names,
+            filled=False,
+            impurity=False,
+            max_depth=tree_max_depth,
+            fontsize=6,
+            ax=ax,
+        )
+        plt.tight_layout()
+        plt.show()
+
+    results = {
+        "y_test": y_test,
+        "y_pred": y_pred,
+        "r2": r2,
+        "rmse": rmse,
+        "mae": mae,
+        "feature_importances": importances,
         "feature_names": feature_names,
     }
     return rf, results
